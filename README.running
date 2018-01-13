@@ -1,0 +1,4 @@
+sudo apt install python-pip
+pip install pyparsing
+
+python edifToUcf.py L_FPGA1_full.NET &U2 a.out

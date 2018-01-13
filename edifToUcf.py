@@ -68,7 +68,7 @@ hexadecimal = ("#" + OneOrMore(Word(hexnums)) + "#")\
                 .setParseAction(lambda t: int("".join(t[1:-1]),16))
 bytes = Word(printables)
 raw = Group(decimal("len") + Suppress(":") + bytes).setParseAction(verifyLen)
-token = Word(alphanums + "-./_:*+=")
+token = Word(alphanums + "-./_:*+=&")
 base64_ = Group(Optional(decimal|hexadecimal,default=None)("len") + VBAR 
     + OneOrMore(Word( alphanums +"+/=" )).setParseAction(lambda t: b64decode("".join(t)))
     + VBAR).setParseAction(verifyLen)
@@ -81,7 +81,7 @@ smtpin = Regex(r'\&?\d+').setParseAction(lambda t: t[0])
 # extended definitions
 decimal = Regex(r'-?0|[1-9]\d*').setParseAction(lambda t: int(t[0]))
 real = Regex(r"[+-]?\d+\.\d*([eE][+-]?\d+)?").setParseAction(lambda tokens: float(tokens[0]))
-token = Word(alphanums + "-./_:*+=!<>")
+token = Word(alphanums + "-./_:*+=!<>&")
 
 #simpleString = real | base64_ | raw | smtpin | decimal | token | hexadecimal | qString
 # get rid of real, base64_ processing passes to speed up parsing a bit
@@ -242,6 +242,9 @@ def netExtractTop(netlist):
 def netPrintUCF(netlist, designator):
     usedDesignators = []
     for node in netlist:
+        #print node
+        if( len(node) < 2 ):
+            continue
         listofpins = node[1]
         extraNets = 0
         printLine = ''
@@ -249,22 +252,23 @@ def netPrintUCF(netlist, designator):
         for pins in listofpins:
             if( pins[1] == designator ):
                 if( usedDesignators.count( node[0] ) == 0 ):
-                    printLine = 'NET \"' + node[0] + '\" LOC = ' + pins[0] + ';'
+                    #printLine = 'NET \"' + node[0].translate(None, '&') + '\" LOC = ' + pins[0] + ';'
+                    printLine = 'set_property PACKAGE_PIN ' + pins[0] + '\t[ get_ports {' + node[0].translate(None, '&') + '} ]';
                     # now match against regex list
-                    for tup in iostandardMaps:
-                        if( re.search( tup[0], node[0] ) ):
-                            printStd =  'NET \"' + node[0] + '\" IOSTANDARD = ' + tup[1] + ';'
-                            break # important to break once first is found
+                    #for tup in iostandardMaps:
+                    #    if( re.search( tup[0], node[0] ) ):
+                    #        printStd =  'NET \"' + node[0] + '\" IOSTANDARD = ' + tup[1] + ';'
+                    #        break # important to break once first is found
                     usedDesignators.append( node[0] )
-                else:
-                    if( extraNets == 0 ):
-                        printLine = printLine + '# '
-                        extraNets = 1
-                    printLine = printLine + pins[0] + " "
+                #else:
+                    #if( extraNets == 0 ):
+                        #printLine = printLine + '# '
+                        #extraNets = 1
+                    #printLine = printLine + pins[0] + " "
         if( printLine != '' ):
-            if( extraNets ):
-                printLine = "# " + printLine
-                printStd = "# " + printStd
+            #if( extraNets ):
+                #printLine = "# " + printLine
+                #printStd = "# " + printStd
             print printLine
             if( len(printStd) > 0 ):
                 print printStd
@@ -322,6 +326,8 @@ renamed = netRename(netlist, [])
 
 #print "extracting net names..."
 pinlist = netExtractTop(renamed)
+
+#print pinlist
 
 #print "printing netlist..."
 pinlist.sort() # sorts the netlist names so it's a little more human readable
