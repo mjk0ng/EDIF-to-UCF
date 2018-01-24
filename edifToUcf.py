@@ -68,20 +68,20 @@ hexadecimal = ("#" + OneOrMore(Word(hexnums)) + "#")\
                 .setParseAction(lambda t: int("".join(t[1:-1]),16))
 bytes = Word(printables)
 raw = Group(decimal("len") + Suppress(":") + bytes).setParseAction(verifyLen)
-token = Word(alphanums + "-./_:*+=&")
+token = Word(alphanums + "-./_:*+=&?")
 base64_ = Group(Optional(decimal|hexadecimal,default=None)("len") + VBAR 
     + OneOrMore(Word( alphanums +"+/=" )).setParseAction(lambda t: b64decode("".join(t)))
     + VBAR).setParseAction(verifyLen)
     
 qString = Group(Optional(decimal,default=None)("len") + 
                         dblQuotedString.setParseAction(removeQuotes)).setParseAction(verifyLen)
-smtpin = Regex(r'\&?\d+').setParseAction(lambda t: t[0])
+smtpin = Regex(r'\&?\d+\?').setParseAction(lambda t: t[0])
 #simpleString = base64_ | raw | decimal | token | hexadecimal | qString | smtpin 
 
 # extended definitions
 decimal = Regex(r'-?0|[1-9]\d*').setParseAction(lambda t: int(t[0]))
 real = Regex(r"[+-]?\d+\.\d*([eE][+-]?\d+)?").setParseAction(lambda tokens: float(tokens[0]))
-token = Word(alphanums + "-./_:*+=!<>&")
+token = Word(alphanums + "-./_:*+=!<>&?")
 
 #simpleString = real | base64_ | raw | smtpin | decimal | token | hexadecimal | qString
 # get rid of real, base64_ processing passes to speed up parsing a bit
